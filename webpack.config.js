@@ -13,11 +13,6 @@ module.exports = {
   module: {
     // rules to handle certain file types
     rules: [
-      // HTML
-      {
-        test: /\.html$/,
-        use: ['html-loader'],
-      },
       // CSS
       {
         test: /\.css$/,
