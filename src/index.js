@@ -1,3 +1,4 @@
+import './style.css';
 import { init } from './utils';
 
 // create a point at origin and draw it

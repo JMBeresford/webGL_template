@@ -1,16 +1,28 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
-  entry: [path.resolve(__dirname, 'src')],
+  entry: [path.resolve(__dirname, 'src/index.js')],
   plugins: [
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, './src/index.html'),
-      minify: true,
     }),
+    new MiniCssExtractPlugin(),
   ],
   module: {
+    // rules to handle certain file types
     rules: [
+      // HTML
+      {
+        test: /\.html$/,
+        use: ['html-loader'],
+      },
+      // CSS
+      {
+        test: /\.css$/,
+        use: [MiniCssExtractPlugin.loader, 'css-loader'],
+      },
       // Images
       {
         test: /\.(jpg|png|gif|svg)$/,
@@ -29,19 +41,14 @@ module.exports = {
         exclude: /node_modules/,
         use: ['raw-loader', 'glslify-loader'],
       },
-      {
-        test: /\.css$/,
-        exclude: /node_modules/,
-        use: ['style-loader', 'css-loader'],
-      },
     ],
   },
   devServer: {
     static: {
       directory: path.join(__dirname, 'dist'),
     },
-    compress: true,
     port: 9000,
     hot: true,
+    liveReload: true,
   },
 };
