@@ -1,0 +1,33 @@
+{
+  "name": "webgl_template",
+  "version": "1.0.0",
+  "description": "Template for basic webGL projects utilizing webpack.",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack serve --mode=development",
+    "build": "webpack build --mode=production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JMBeresford/webGL_template.git"
+  },
+  "keywords": [
+    "webGL",
+    "template",
+    "webpack"
+  ],
+  "author": "John Beresford",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/JMBeresford/webGL_template/issues"
+  },
+  "homepage": "https://github.com/JMBeresford/webGL_template#readme",
+  "dependencies": {
+    "webpack": "^5.55.1",
+    "webpack-cli": "^4.8.0",
+    "webpack-dev-server": "^4.3.0",
+    "glslify-loader": "^2.0.0",
+    "raw-loader": "^4.0.2"
+  }
+}
