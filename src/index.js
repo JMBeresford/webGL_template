@@ -1,24 +1,32 @@
 import './style.css';
-import { init } from './utils';
+import { Renderer } from './core/Renderer';
+import { Cube } from './core/Cube';
+import { PerspectiveCamera } from './core/Cameras';
+import Stats from 'stats.js';
 
-// create a point at origin and draw it
-const example = (gl) => {
-  const vertices = new Float32Array([0, 0, 0]);
+var stats = new Stats();
+stats.showPanel(1); // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild(stats.dom);
 
-  const vBuffer = gl.createBuffer();
+const canvas = document.querySelector('#webgl');
 
-  // assign attributes
-  gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-  const aPositionPtr = gl.getAttribLocation(gl.program, 'aPosition');
-  gl.vertexAttribPointer(aPositionPtr, 3, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(aPositionPtr);
+const renderer = new Renderer(canvas);
+const camera = new PerspectiveCamera();
 
-  // draw the point
-  gl.drawArrays(gl.POINTS, 0, 1);
+const cube = new Cube(0, 0, 0, 1, 1, 1);
+cube.setPosition([0, 0, -1]);
+
+const tick = () => {
+  stats.begin();
+  cube.rotation.elements[1] += 0.1;
+  cube.rotation.elements[0] += 0.1;
+  cube.recalculateMatrix();
+  renderer.render(cube, camera);
+  stats.end();
+
+  requestAnimationFrame(tick);
 };
 
-// init webGL context
-const gl = init();
+tick();
 
-example(gl);
+console.log(cube);
