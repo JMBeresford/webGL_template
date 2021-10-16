@@ -35,13 +35,13 @@ class Uniform {
 }
 
 class Object3D {
-  constructor(x, y, z) {
+  constructor({ position, rotation, scale }) {
     this.type = 'Object3D';
 
     // transforms
-    this.position = new Vector3([x, y, z]);
-    this.scale = new Vector3([1, 1, 1]);
-    this.rotation = new Vector3([0, 0, 0]);
+    this.position = new Vector3(position || [0, 0, 0]);
+    this.scale = new Vector3(scale || [1, 1, 1]);
+    this.rotation = new Vector3(rotation || [0, 0, 0]);
 
     // scene graph related
     this.parent = null;
@@ -56,7 +56,8 @@ class Object3D {
       // new Attribute([0, 0, 0], 3, aPosition), ex: a single vertex
     ];
     this.uniforms = [
-      // new Uniform([1,0,0], 3, uColor, 'vec3'), ex: the color red as uniform
+      // new Uniform([1,0,0], 3, 'uColor', 'vec3'), ex: the color red as uniform
+      new Uniform([0, 0], 2, 'uMouse', 'vec2'),
     ];
     this.indices = []; // indices of vertices to draw triangles from, in order
 

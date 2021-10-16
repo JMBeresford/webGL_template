@@ -1,19 +1,11 @@
 import { Matrix4 } from '../../lib/cuon-matrix-cse160';
 import { Object3D, Attribute, Uniform } from './Object3D';
 
-let _scaleMatrix = new Matrix4();
-let _rotMatrix = new Matrix4();
-let _translateMatrix = new Matrix4();
-let _viewMatrix = new Matrix4();
-
 class Cube extends Object3D {
-  constructor(x, y, z, width, height, depth) {
-    super(x, y, z);
+  constructor({ position, scale, rotation }) {
+    super({ position, scale, rotation });
 
     this.type = 'cube';
-    this.scale.elements[0] = width;
-    this.scale.elements[1] = height;
-    this.scale.elements[2] = depth;
 
     this.attributes.push(
       new Attribute(
