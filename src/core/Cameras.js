@@ -10,22 +10,38 @@ class PerspectiveCamera extends Object3D {
       return;
     }
 
+    window.addEventListener('resize', (e) => {
+      this.aspect = e.target.innerWidth / e.target.innerHeight;
+
+      this.calculateViewProjection();
+    });
+
     this.type = 'camera';
-    this.aspect = window.screen.width / window.screen.height;
+    this.aspect = window.innerWidth / window.innerHeight;
+    this.fov = fov;
+    this.near = near;
+    this.far = far;
+
+    this.viewMatrix = new Matrix4();
+    this.projectionMatrix = new Matrix4();
 
     this.target = target || new Vector3([0, 0, 0]);
 
-    this.viewMatrix = new Matrix4().setLookAt(
+    this.calculateViewProjection();
+  }
+
+  calculateViewProjection() {
+    this.viewMatrix.setLookAt(
       ...this.position.elements,
       ...this.target.elements,
       ...this.up.elements
     );
 
-    this.projectionMatrix = new Matrix4().setPerspective(
-      fov,
+    this.projectionMatrix.setPerspective(
+      this.fov,
       this.aspect,
-      near,
-      far
+      this.near,
+      this.far
     );
   }
 }

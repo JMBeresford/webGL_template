@@ -5,7 +5,7 @@ import defaultFragmentShader from './shaders/default.frag';
 let _scaleMatrix = new Matrix4();
 let _rotMatrix = new Matrix4();
 let _translateMatrix = new Matrix4();
-let _viewMatrix = new Matrix4();
+let _matrix = new Matrix4();
 
 class Attribute {
   constructor(array, count, name) {
@@ -48,7 +48,9 @@ class Object3D {
     this.children = [];
 
     // object data
-    this.matrix = new Matrix4().setIdentity();
+    this.color = new Vector3([1, 1, 1]);
+    this.matrix = new Matrix4();
+    this.matrixWorld = new Matrix4();
     this.up = new Vector3([0, 1, 0]);
     this.drawMode = 'static';
     this.drawType = 'triangles';
@@ -65,12 +67,37 @@ class Object3D {
       vertex: defaultVertexShader,
       fragment: defaultFragmentShader,
     };
+
+    this.autoUpdateMatrix = false;
+
+    this.recalculateMatrix();
+
+    this.uniforms.push(
+      new Uniform(
+        this.matrix.elements,
+        this.matrix.elements.length,
+        'modelMatrix',
+        'mat4'
+      ),
+      new Uniform(
+        this.color.elements,
+        this.color.elements.length,
+        'uColor',
+        'vec3'
+      )
+    );
   }
 
-  add(child) {
-    this.children.push(child);
+  add(children) {
+    if (Array.isArray(children) && children.length > 0) {
+      for (let child of children) {
+        this.add(child);
+      }
+    } else {
+      this.children.push(children);
 
-    child.parent = this;
+      children.parent = this;
+    }
   }
 
   remove(child) {
@@ -96,6 +123,10 @@ class Object3D {
     this.recalculateMatrix();
   }
 
+  getPosition() {
+    return [...this.position.elements];
+  }
+
   setScale(x, y, z) {
     if (Array.isArray(x)) {
       for (let i = 0; i < 3; i++) {
@@ -110,6 +141,10 @@ class Object3D {
     }
 
     this.recalculateMatrix();
+  }
+
+  getScale() {
+    return [...this.scale.elements];
   }
 
   setRotation(x, y, z) {
@@ -128,6 +163,10 @@ class Object3D {
     this.recalculateMatrix();
   }
 
+  getRotation() {
+    return [...this.rotation.elements];
+  }
+
   setUpDirection(x, y, z) {
     if (Array.isArray(x)) {
       for (let i = 0; i < 3; i++) {
@@ -142,11 +181,43 @@ class Object3D {
     }
   }
 
+  getUpDirection() {
+    return [...this.up.elements];
+  }
+
+  setVertexShader(vert) {
+    this.shaders.vertex = vert;
+  }
+
+  setFragmentShader(frag) {
+    this.shaders.fragment = frag;
+  }
+
   traverse(callback) {
     callback(this);
 
     for (let child of this.children) {
       child.traverse(callback);
+    }
+  }
+
+  setColor(r, g, b) {
+    if (Array.isArray(r)) {
+      for (let i = 0; i < 3; i++) {
+        this.color.elements[i] = r[i];
+      }
+    } else if (r.elements) {
+      this.color.set(r);
+    } else {
+      this.color.elements[0] = r;
+      this.color.elements[1] = g;
+      this.color.elements[2] = b;
+    }
+
+    let u = this.uniforms.find((u) => u.name === 'uColor');
+
+    if (u) {
+      u.value = this.color.elements;
     }
   }
 
@@ -161,10 +232,21 @@ class Object3D {
       _translateMatrix.multiply(_rotMatrix).multiply(_scaleMatrix)
     );
 
+    if (this.parent) {
+      _matrix.set(this.parent.matrixWorld);
+      this.matrixWorld.set(_matrix.multiply(this.matrix));
+    } else {
+      this.matrixWorld.set(this.matrix);
+    }
+
     let u = this.uniforms.find((u) => u.name === 'modelMatrix');
 
     if (u) {
-      u.value = this.matrix.elements;
+      u.value = this.matrixWorld.elements;
+    }
+
+    for (let child of this.children) {
+      child.recalculateMatrix();
     }
   }
 }

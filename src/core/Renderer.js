@@ -8,10 +8,17 @@ class Renderer {
       return;
     }
 
-    canvas.width = window.screen.width;
-    canvas.height = window.screen.height;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     this.gl = getWebGLContext(canvas);
+
+    window.addEventListener('resize', (e) => {
+      this.gl.canvas.width = e.target.innerWidth;
+      this.gl.canvas.height = e.target.innerHeight;
+
+      this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+    });
 
     if (!this.gl) {
       console.warn('Could not get the webGL context!');
@@ -19,11 +26,12 @@ class Renderer {
     }
 
     this.gl.clearColor(0, 0, 0, 1);
+    this.gl.enable(this.gl.DEPTH_TEST);
     this.clear();
   }
 
   clear() {
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
   }
 
   setClearColor(r, g, b, a) {
@@ -44,6 +52,10 @@ class Renderer {
     this.clear();
 
     scene.traverse((obj) => {
+      if (obj.autoUpdateMatrix) {
+        obj.recalculateMatrix();
+      }
+
       this.loadShaders(obj.shaders.vertex, obj.shaders.fragment);
 
       let viewMatrixPtr = this.gl.getUniformLocation(
@@ -72,6 +84,7 @@ class Renderer {
         false,
         camera.viewMatrix.elements
       );
+
       this.gl.uniformMatrix4fv(
         projectionMatrixPtr,
         false,
@@ -134,10 +147,15 @@ class Renderer {
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffers[attribute.name]);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, attribute.value, drawMode);
 
-        const attribPtr = this.gl.getAttribLocation(
+        let attribPtr = this.gl.getAttribLocation(
           this.gl.program,
           attribute.name
         );
+
+        if (attribPtr === -1) {
+          continue;
+        }
+
         this.gl.vertexAttribPointer(
           attribPtr,
           attribute.countPerVertex,

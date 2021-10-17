@@ -1,5 +1,5 @@
-import { Matrix4 } from '../../lib/cuon-matrix-cse160';
-import { Object3D, Attribute, Uniform } from './Object3D';
+import { Matrix4 } from '../../../lib/cuon-matrix-cse160';
+import { Object3D, Attribute, Uniform } from '../Object3D';
 
 class Cube extends Object3D {
   constructor({ position, scale, rotation }) {
@@ -32,6 +32,31 @@ class Cube extends Object3D {
       )
     );
 
+    this.attributes.push(
+      new Attribute(
+        new Float32Array([
+          // v0
+          0.0, 0.0, 1.0,
+          //v1
+          0.0, 1.0, 0.0,
+          //v2
+          0.0, 1.0, 1.0,
+          //v3
+          1.0, 0.0, 0.0,
+          //v4
+          1.0, 0.0, 1.0,
+          //v5
+          1.0, 1.0, 0.0,
+          //v6
+          0.5, 1.0, 1.0,
+          //v7
+          1.0, 0.5, 0.1,
+        ]),
+        3,
+        'aColor'
+      )
+    );
+
     this.indices = new Uint8Array([
       // front
       0, 2, 1, 1, 2, 3,
@@ -46,17 +71,6 @@ class Cube extends Object3D {
       // bottom
       0, 4, 6, 0, 6, 2,
     ]);
-
-    this.recalculateMatrix();
-
-    this.uniforms.push(
-      new Uniform(
-        this.matrix.elements,
-        this.matrix.elements.length,
-        'modelMatrix',
-        'mat4'
-      )
-    );
   }
 }
 
