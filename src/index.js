@@ -15,7 +15,7 @@ const canvas = document.querySelector('#webgl');
 const renderer = new Renderer(canvas);
 
 // camera
-const camera = new PerspectiveCamera({ position: [0, 0, -3] });
+const camera = new PerspectiveCamera({ position: [0, 0.5, -3] });
 
 // scene
 const scene = new Scene({ position: [0, 0, 0] });
@@ -53,7 +53,7 @@ const PARAMS = {
       y: 0,
       z: 0,
     },
-    autoRotate: true,
+    autoRotate: false,
   },
 };
 
@@ -94,5 +94,9 @@ const tick = () => {
 
   frame = requestAnimationFrame(tick);
 };
+
+canvas.addEventListener('click', (e) => {
+  console.log(cube);
+});
 
 tick();

@@ -1,8 +1,12 @@
 import { Matrix4 } from '../../../lib/cuon-matrix-cse160';
-import { Object3D, Attribute, Uniform } from '../Object3D';
+import { Object3D, Attribute } from '../Object3D';
 
 class Cube extends Object3D {
-  constructor({ position, scale, rotation }) {
+  constructor({
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+    scale = [1, 1, 1],
+  }) {
     super({ position, scale, rotation });
 
     this.type = 'cube';

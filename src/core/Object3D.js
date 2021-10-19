@@ -6,6 +6,7 @@ let _scaleMatrix = new Matrix4();
 let _rotMatrix = new Matrix4();
 let _translateMatrix = new Matrix4();
 let _matrix = new Matrix4();
+let _norm = new Matrix4().setScale(1, 1, 1);
 
 class Attribute {
   constructor(array, count, name) {
@@ -35,13 +36,22 @@ class Uniform {
 }
 
 class Object3D {
-  constructor({ position, rotation, scale }) {
+  constructor({
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+    scale = [1, 1, 1],
+  }) {
     this.type = 'Object3D';
 
     // transforms
-    this.position = new Vector3(position || [0, 0, 0]);
-    this.scale = new Vector3(scale || [1, 1, 1]);
-    this.rotation = new Vector3(rotation || [0, 0, 0]);
+    this.position = new Vector3(position);
+    this.scale = new Vector3(scale);
+    this.rotation = new Vector3(rotation);
+
+    // matrices
+    this.scaleMatrix = new Matrix4();
+    this.rotationMatrix = new Matrix4();
+    this.translationMatrix = new Matrix4();
 
     // scene graph related
     this.parent = null;
@@ -51,9 +61,11 @@ class Object3D {
     this.color = new Vector3([1, 1, 1]);
     this.matrix = new Matrix4();
     this.matrixWorld = new Matrix4();
+    this.renderMatrix = new Matrix4();
     this.up = new Vector3([0, 1, 0]);
     this.drawMode = 'static';
     this.drawType = 'triangles';
+    this.visible = true;
     this.attributes = [
       // new Attribute([0, 0, 0], 3, aPosition), ex: a single vertex
     ];
@@ -68,8 +80,11 @@ class Object3D {
       fragment: defaultFragmentShader,
     };
 
-    this.autoUpdateMatrix = false;
+    this.autoUpdateMatrix = true;
 
+    this.calculateScaleMatrix();
+    this.calculateRotationMatrix();
+    this.calculateTranslationMatrix();
     this.recalculateMatrix();
 
     this.uniforms.push(
@@ -120,7 +135,7 @@ class Object3D {
       this.position.elements[2] = z;
     }
 
-    this.recalculateMatrix();
+    this.calculateTranslationMatrix();
   }
 
   getPosition() {
@@ -140,7 +155,7 @@ class Object3D {
       this.scale.elements[2] = z;
     }
 
-    this.recalculateMatrix();
+    this.calculateScaleMatrix();
   }
 
   getScale() {
@@ -160,7 +175,7 @@ class Object3D {
       this.rotation.elements[2] = z;
     }
 
-    this.recalculateMatrix();
+    this.calculateRotationMatrix();
   }
 
   getRotation() {
@@ -221,32 +236,72 @@ class Object3D {
     }
   }
 
-  recalculateMatrix() {
-    _scaleMatrix.setScale(...this.scale.elements);
-    _rotMatrix.setRotate(this.rotation.elements[0], 1, 0, 0);
-    _rotMatrix.rotate(this.rotation.elements[1], 0, 1, 0);
-    _rotMatrix.rotate(this.rotation.elements[2], 0, 0, 1);
-    _translateMatrix.setTranslate(...this.position.elements);
+  calculateScaleMatrix() {
+    this.scaleMatrix.setScale(...this.scale.elements);
+  }
 
-    this.matrix.set(
-      _translateMatrix.multiply(_rotMatrix).multiply(_scaleMatrix)
-    );
+  calculateRotationMatrix() {
+    this.rotationMatrix.setRotate(this.rotation.elements[0], 1, 0, 0);
+    this.rotationMatrix.rotate(this.rotation.elements[1], 0, 1, 0);
+    this.rotationMatrix.rotate(this.rotation.elements[2], 0, 0, 1);
+  }
 
-    if (this.parent) {
-      _matrix.set(this.parent.matrixWorld);
-      this.matrixWorld.set(_matrix.multiply(this.matrix));
+  calculateTranslationMatrix() {
+    this.translationMatrix.setTranslate(...this.position.elements);
+  }
+
+  getScaleMatrix() {
+    return _scaleMatrix.set(this.scaleMatrix);
+  }
+
+  getRotationMatrix() {
+    return _rotMatrix.set(this.rotationMatrix);
+  }
+
+  getTranslationMatrix() {
+    return _translateMatrix.set(this.translationMatrix);
+  }
+
+  getMatrix() {
+    this.calculateMatrix();
+    return this.matrix;
+  }
+
+  getMatrixWorld() {
+    this.calculateWorldMatrix();
+    return this.matrixWorld;
+  }
+
+  calculateMatrix() {
+    this.matrix
+      .set(this.translationMatrix)
+      .multiply(this.rotationMatrix)
+      .multiply(this.scaleMatrix);
+  }
+
+  calculateWorldMatrix() {
+    if (this.parent !== null) {
+      this.matrixWorld
+        .set(this.parent.getMatrixWorld())
+        .multiply(this.translationMatrix)
+        .multiply(this.rotationMatrix);
     } else {
-      this.matrixWorld.set(this.matrix);
+      this.matrixWorld
+        .set(this.translationMatrix)
+        .multiply(this.rotationMatrix);
     }
+  }
+
+  recalculateMatrix() {
+    this.calculateMatrix();
+    this.calculateWorldMatrix();
+
+    this.renderMatrix.set(this.matrixWorld).multiply(this.scaleMatrix);
 
     let u = this.uniforms.find((u) => u.name === 'modelMatrix');
 
     if (u) {
-      u.value = this.matrixWorld.elements;
-    }
-
-    for (let child of this.children) {
-      child.recalculateMatrix();
+      u.value = this.renderMatrix.elements;
     }
   }
 }

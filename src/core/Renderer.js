@@ -56,6 +56,10 @@ class Renderer {
         obj.recalculateMatrix();
       }
 
+      if (obj.visible === false) {
+        return;
+      }
+
       this.loadShaders(obj.shaders.vertex, obj.shaders.fragment);
 
       let viewMatrixPtr = this.gl.getUniformLocation(
