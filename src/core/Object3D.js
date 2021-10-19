@@ -1,6 +1,5 @@
 import { Vector3, Matrix4 } from '../../lib/cuon-matrix-cse160';
-import defaultVertexShader from './shaders/default.vert';
-import defaultFragmentShader from './shaders/default.frag';
+import { createProgram } from '../../lib/cuon-utils';
 
 let _scaleMatrix = new Matrix4();
 let _rotMatrix = new Matrix4();
@@ -67,18 +66,13 @@ class Object3D {
     this.drawType = 'triangles';
     this.visible = true;
     this.attributes = [
-      // new Attribute([0, 0, 0], 3, aPosition), ex: a single vertex
+      // new Attribute([0, 0, 0], 3, aPosition), example: a single vertex
     ];
-    this.uniforms = [
-      // new Uniform([1,0,0], 3, 'uColor', 'vec3'), ex: the color red as uniform
-      new Uniform([0, 0], 2, 'uMouse', 'vec2'),
-    ];
+    this.uniforms = [new Uniform([0, 0], 2, 'uMouse', 'vec2')];
     this.indices = []; // indices of vertices to draw triangles from, in order
 
-    this.shaders = {
-      vertex: defaultVertexShader,
-      fragment: defaultFragmentShader,
-    };
+    // shader program, will be compiled manually
+    this.program = null;
 
     this.autoUpdateMatrix = true;
 
@@ -200,12 +194,12 @@ class Object3D {
     return [...this.up.elements];
   }
 
-  setVertexShader(vert) {
-    this.shaders.vertex = vert;
-  }
+  setShaderProgram(gl, vert, frag) {
+    this.program = createProgram(gl, vert, frag);
 
-  setFragmentShader(frag) {
-    this.shaders.fragment = frag;
+    if (!this.program) {
+      console.warn(`Failed to compile program for ${this}`);
+    }
   }
 
   traverse(callback) {

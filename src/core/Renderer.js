@@ -1,4 +1,7 @@
 import { Vector3 } from '../../lib/cuon-matrix-cse160';
+import { createProgram } from '../../lib/cuon-utils';
+import defaultVertexShader from './shaders/default.vert';
+import defaultFragmentShader from './shaders/default.frag';
 import { getWebGLContext, initShaders } from '../../lib/cuon-utils';
 
 class Renderer {
@@ -25,6 +28,12 @@ class Renderer {
       return;
     }
 
+    this.defaultProgram = createProgram(
+      this.gl,
+      defaultVertexShader,
+      defaultFragmentShader
+    );
+
     this.gl.clearColor(0, 0, 0, 1);
     this.gl.enable(this.gl.DEPTH_TEST);
     this.clear();
@@ -42,12 +51,6 @@ class Renderer {
     }
   }
 
-  loadShaders(vert, frag) {
-    if (!initShaders(this.gl, vert, frag)) {
-      console.warn('Error loading shaders!', vert, frag);
-    }
-  }
-
   render(scene, camera) {
     this.clear();
 
@@ -60,7 +63,13 @@ class Renderer {
         return;
       }
 
-      this.loadShaders(obj.shaders.vertex, obj.shaders.fragment);
+      if (obj.program !== null) {
+        this.gl.useProgram(obj.program);
+        this.gl.program = obj.program;
+      } else {
+        this.gl.useProgram(this.defaultProgram);
+        this.gl.program = this.defaultProgram;
+      }
 
       let viewMatrixPtr = this.gl.getUniformLocation(
         this.gl.program,

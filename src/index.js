@@ -19,12 +19,12 @@ const camera = new PerspectiveCamera({ position: [0, 0.5, -3] });
 
 // scene
 const scene = new Scene({ position: [0, 0, 0] });
+scene.visible = false;
 
 const cube = new Cube({ position: [0, 0, 0], scale: [1, 1, 1] });
 const floor = new Cube({ position: [0, -3, 0], scale: [25, 0, 25] });
 
-floor.setVertexShader(basicVertexShader);
-floor.setFragmentShader(basicFragmentShader);
+floor.setShaderProgram(renderer.gl, basicVertexShader, basicFragmentShader);
 
 floor.setColor([0.75, 0.75, 0.75]);
 
@@ -96,7 +96,7 @@ const tick = () => {
 };
 
 canvas.addEventListener('click', (e) => {
-  console.log(cube);
+  console.log(floor);
 });
 
 tick();
