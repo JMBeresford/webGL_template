@@ -26,13 +26,13 @@ const floor = new Cube({ position: [0, -3, 0], scale: [25, 0, 25] });
 floor.setVertexShader(basicVertexShader);
 floor.setFragmentShader(basicFragmentShader);
 
-floor.setColor([0, 0.75, 0.75]);
+floor.setColor([0.75, 0.75, 0.75]);
 
 scene.add([cube, floor]);
 
 // DEBUG TOOLS
 const monitor = new Monitor(0);
-const pane = new Pane({ title: 'Config' });
+const pane = new Pane({ title: 'Config', expanded: false });
 
 const PARAMS = {
   scene: {
