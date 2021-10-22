@@ -1,8 +1,7 @@
 import { Vector3 } from '../../lib/cuon-matrix-cse160';
-import { createProgram } from '../../lib/cuon-utils';
 import defaultVertexShader from './shaders/default.vert';
 import defaultFragmentShader from './shaders/default.frag';
-import { getWebGLContext, initShaders } from '../../lib/cuon-utils';
+import { getWebGLContext, createProgram } from '../../lib/cuon-utils';
 
 class Renderer {
   constructor(canvas) {
@@ -14,7 +13,9 @@ class Renderer {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    this.gl = getWebGLContext(canvas);
+    this.gl = getWebGLContext(canvas, false, {
+      powerPreference: 'high-performance',
+    });
 
     window.addEventListener('resize', (e) => {
       this.gl.canvas.width = e.target.innerWidth;
@@ -33,6 +34,10 @@ class Renderer {
       defaultVertexShader,
       defaultFragmentShader
     );
+
+    this.viewMatrixLocation = null;
+    this.projectionMatrixLocation = null;
+    this.resolutionLocation = null;
 
     this.gl.clearColor(0, 0, 0, 1);
     this.gl.enable(this.gl.DEPTH_TEST);
@@ -71,42 +76,15 @@ class Renderer {
         this.gl.program = this.defaultProgram;
       }
 
-      let viewMatrixPtr = this.gl.getUniformLocation(
-        this.gl.program,
-        'viewMatrix'
-      );
-
-      let projectionMatrixPtr = this.gl.getUniformLocation(
-        this.gl.program,
-        'projectionMatrix'
-      );
-
-      let uResolutionPtr = this.gl.getUniformLocation(
-        this.gl.program,
-        'uResolution'
-      );
-
-      this.gl.uniform2f(
-        uResolutionPtr,
+      obj.uniforms.viewMatrix.value.set(camera.viewMatrix.elements);
+      obj.uniforms.projectionMatrix.value.set(camera.projectionMatrix.elements);
+      obj.uniforms.uResolution.value.set([
         this.gl.canvas.width,
-        this.gl.canvas.height
-      );
+        this.gl.canvas.height,
+      ]);
 
-      this.gl.uniformMatrix4fv(
-        viewMatrixPtr,
-        false,
-        camera.viewMatrix.elements
-      );
-
-      this.gl.uniformMatrix4fv(
-        projectionMatrixPtr,
-        false,
-        camera.projectionMatrix.elements
-      );
-
-      let buffers = {};
-      let drawMode;
-      let drawType;
+      let drawMode = this.gl.DYNAMIC_DRAW;
+      let drawType = this.gl.TRIANGLES;
 
       switch (obj.drawMode) {
         case 'static': {
@@ -155,70 +133,86 @@ class Renderer {
       }
 
       for (let attribute of obj.attributes) {
-        buffers[attribute.name] = this.gl.createBuffer();
+        let created = false;
+        if (attribute.buffer === null) {
+          attribute.buffer = this.gl.createBuffer();
+          created = true;
+          this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
+        }
 
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffers[attribute.name]);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, attribute.value, drawMode);
 
-        let attribPtr = this.gl.getAttribLocation(
-          this.gl.program,
-          attribute.name
-        );
+        if (attribute.location === null) {
+          attribute.location = this.gl.getAttribLocation(
+            this.gl.program,
+            attribute.name
+          );
+        }
+
+        const attribPtr = attribute.location;
 
         if (attribPtr === -1) {
           continue;
         }
 
-        this.gl.vertexAttribPointer(
-          attribPtr,
-          attribute.countPerVertex,
-          this.gl.FLOAT,
-          false,
-          0,
-          0
-        );
-
-        this.gl.enableVertexAttribArray(attribPtr);
+        if (created) {
+          this.gl.vertexAttribPointer(
+            attribPtr,
+            attribute.countPerVertex,
+            this.gl.FLOAT,
+            false,
+            0,
+            0
+          );
+          this.gl.enableVertexAttribArray(attribPtr);
+        }
       }
 
-      for (let uniform of obj.uniforms) {
-        let uniformPtr = this.gl.getUniformLocation(
-          this.gl.program,
-          uniform.name
-        );
+      const uniforms = obj.uniforms;
+      for (let name in uniforms) {
+        if (uniforms[name].location === null) {
+          uniforms[name].location = this.gl.getUniformLocation(
+            this.gl.program,
+            name
+          );
+        }
 
-        switch (uniform.type) {
+        let uniformPtr = uniforms[name].location;
+
+        switch (uniforms[name].type) {
           case 'vec1': {
-            this.gl.uniform1f(uniformPtr, ...uniform.value);
+            this.gl.uniform1f(uniformPtr, ...uniforms[name].value);
             break;
           }
           case 'vec2': {
-            this.gl.uniform2f(uniformPtr, ...uniform.value);
+            this.gl.uniform2f(uniformPtr, ...uniforms[name].value);
             break;
           }
           case 'vec3': {
-            this.gl.uniform3f(uniformPtr, ...uniform.value);
+            this.gl.uniform3f(uniformPtr, ...uniforms[name].value);
             break;
           }
           case 'vec4': {
-            this.gl.uniform4f(uniformPtr, ...uniform.value);
+            this.gl.uniform4f(uniformPtr, ...uniforms[name].value);
             break;
           }
 
           case 'mat3': {
-            this.gl.uniformMatrix3fv(uniformPtr, false, uniform.value);
+            this.gl.uniformMatrix3fv(uniformPtr, false, uniforms[name].value);
             break;
           }
           case 'mat4': {
-            this.gl.uniformMatrix4fv(uniformPtr, false, uniform.value);
+            this.gl.uniformMatrix4fv(uniformPtr, false, uniforms[name].value);
             break;
           }
         }
       }
 
-      buffers['indices'] = this.gl.createBuffer();
+      if (obj.indexBuffer === null) {
+        obj.indexBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, obj.indexBuffer);
+      }
 
-      this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, buffers['indices']);
       this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, obj.indices, drawMode);
 
       this.gl.drawElements(

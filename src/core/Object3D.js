@@ -17,20 +17,25 @@ class Attribute {
 
     this.countPerVertex = count;
     this.name = name;
+    this.buffer = null;
+    this.location = null;
   }
 }
 
 class Uniform {
-  constructor(array, count, name, type) {
+  constructor(array, count, type) {
     if (Array.isArray(array)) {
       this.value = new Float32Array(array);
+    } else if (array === null) {
+      this.value = new Float32Array(count);
     } else {
       this.value = array;
     }
 
     this.count = count;
-    this.name = name;
     this.type = type;
+
+    this.location = null;
   }
 }
 
@@ -68,8 +73,19 @@ class Object3D {
     this.attributes = [
       // new Attribute([0, 0, 0], 3, aPosition), example: a single vertex
     ];
-    this.uniforms = [new Uniform([0, 0], 2, 'uMouse', 'vec2')];
+    this.uniforms = {
+      // default uniforms
+      uMouse: new Uniform(null, 2, 'vec2'),
+      uResolution: new Uniform(null, 2, 'vec2'),
+      viewMatrix: new Uniform(null, 16, 'mat4'),
+      projectionMatrix: new Uniform(null, 16, 'mat4'),
+      modelMatrix: new Uniform(null, 16, 'mat4'),
+      uColor: new Uniform(null, 3, 'vec3'),
+    };
+
     this.indices = []; // indices of vertices to draw triangles from, in order
+    this.indexBuffer = null;
+    this.indexLocation = null;
 
     // shader program, will be compiled manually
     this.program = null;
@@ -80,21 +96,6 @@ class Object3D {
     this.calculateRotationMatrix();
     this.calculateTranslationMatrix();
     this.recalculateMatrix();
-
-    this.uniforms.push(
-      new Uniform(
-        this.matrix.elements,
-        this.matrix.elements.length,
-        'modelMatrix',
-        'mat4'
-      ),
-      new Uniform(
-        this.color.elements,
-        this.color.elements.length,
-        'uColor',
-        'vec3'
-      )
-    );
   }
 
   add(children) {
@@ -223,11 +224,7 @@ class Object3D {
       this.color.elements[2] = b;
     }
 
-    let u = this.uniforms.find((u) => u.name === 'uColor');
-
-    if (u) {
-      u.value = this.color.elements;
-    }
+    this.uniforms.uColor.value.set(this.color.elements);
   }
 
   calculateScaleMatrix() {
@@ -287,16 +284,14 @@ class Object3D {
   }
 
   recalculateMatrix() {
-    this.calculateMatrix();
+    if (this.autoUpdateMatrix) {
+      this.calculateMatrix();
+    }
     this.calculateWorldMatrix();
 
     this.renderMatrix.set(this.matrixWorld).multiply(this.scaleMatrix);
 
-    let u = this.uniforms.find((u) => u.name === 'modelMatrix');
-
-    if (u) {
-      u.value = this.renderMatrix.elements;
-    }
+    this.uniforms.modelMatrix.value.set(this.renderMatrix.elements);
   }
 }
 
