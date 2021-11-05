@@ -1,5 +1,7 @@
 import { Vector3, Matrix4 } from '../../lib/cuon-matrix-cse160';
 import { createProgram } from '../../lib/cuon-utils';
+import defaultVertexShader from './shaders/default.vert';
+import defaultFragmentShader from './shaders/default.frag';
 
 let _scaleMatrix = new Matrix4();
 let _rotMatrix = new Matrix4();
@@ -62,33 +64,37 @@ class Object3D {
     this.children = [];
 
     // object data
-    this.color = new Vector3([1, 1, 1]);
     this.matrix = new Matrix4();
     this.matrixWorld = new Matrix4();
     this.renderMatrix = new Matrix4();
     this.up = new Vector3([0, 1, 0]);
-    this.drawMode = 'static';
+    this.drawMode = 'dynamic';
     this.drawType = 'triangles';
-    this.visible = true;
+    this.visible = false;
+    this.transparent = false;
     this.attributes = [
       // new Attribute([0, 0, 0], 3, aPosition), example: a single vertex
     ];
     this.uniforms = {
       // default uniforms
       uMouse: new Uniform(null, 2, 'vec2'),
+      uTime: new Uniform(null, 1, 'float'),
       uResolution: new Uniform(null, 2, 'vec2'),
       viewMatrix: new Uniform(null, 16, 'mat4'),
       projectionMatrix: new Uniform(null, 16, 'mat4'),
       modelMatrix: new Uniform(null, 16, 'mat4'),
-      uColor: new Uniform(null, 3, 'vec3'),
+      uColor: new Uniform(new Float32Array([1, 1, 1]), 3, 'vec3'),
     };
 
-    this.indices = []; // indices of vertices to draw triangles from, in order
+    this.indices = null; // indices of vertices to draw triangles from, in order
     this.indexBuffer = null;
     this.indexLocation = null;
+    this.userData = {};
 
     // shader program, will be compiled manually
     this.program = null;
+    this.vertexShader = defaultVertexShader;
+    this.fragmentShader = defaultFragmentShader;
 
     this.autoUpdateMatrix = true;
 
@@ -115,6 +121,12 @@ class Object3D {
 
     child.parent = null;
     this.children.splice(idx, 1);
+  }
+
+  getAlphaOrderedChildren() {
+    return this.children.sort((a, b) => {
+      return a.transparent ? 1 : -1;
+    });
   }
 
   setPosition(x, y, z) {
@@ -206,7 +218,7 @@ class Object3D {
   traverse(callback) {
     callback(this);
 
-    for (let child of this.children) {
+    for (let child of this.getAlphaOrderedChildren()) {
       child.traverse(callback);
     }
   }
@@ -214,17 +226,15 @@ class Object3D {
   setColor(r, g, b) {
     if (Array.isArray(r)) {
       for (let i = 0; i < 3; i++) {
-        this.color.elements[i] = r[i];
+        this.uniforms.uColor.value[i] = r[i];
       }
     } else if (r.elements) {
-      this.color.set(r);
+      this.uniforms.uColor.value.set(r);
     } else {
-      this.color.elements[0] = r;
-      this.color.elements[1] = g;
-      this.color.elements[2] = b;
+      this.uniforms.uColor.value[0] = r;
+      this.uniforms.uColor.value[1] = g;
+      this.uniforms.uColor.value[2] = b;
     }
-
-    this.uniforms.uColor.value.set(this.color.elements);
   }
 
   calculateScaleMatrix() {
