@@ -2,49 +2,60 @@ import { Matrix4 } from '../../../lib/cuon-matrix-cse160';
 import { Object3D, Attribute } from '../Object3D';
 
 class Plane extends Object3D {
-  constructor({
-    position = [0, 0, 0],
-    rotation = [0, 0, 0],
-    scale = [1, 1, 1],
+  constructor(
     width = 1,
     height = 1,
     widthSegments = 1,
     heightSegments = 1,
-  }) {
-    super({ position, scale, rotation });
+    position = [0, 0, 0],
+    rotation = [0, 0, 0],
+    scale = [1, 1, 1]
+  ) {
+    super(position, rotation, scale);
 
     this.type = 'plane';
     this.visible = true;
+    this.drawType = 'triangles';
 
-    let wMid = width / 2;
-    let hMid = height / 2;
+    const wMid = width / 2;
+    const hMid = height / 2;
 
-    let seg_width = width / widthSegments;
-    let seg_height = height / heightSegments;
+    const gridX = Math.floor(widthSegments);
+    const gridY = Math.floor(heightSegments);
 
-    let vertices = [];
-    let idx = [];
-    let uvs = [];
+    const gridX1 = gridX + 1;
+    const gridY1 = gridY + 1;
 
-    for (let i = 0; i < heightSegments + 1; i++) {
-      var y = i * seg_height - hMid;
+    const seg_width = width / gridX;
+    const seg_height = height / gridY;
 
-      for (let j = 0; j < widthSegments + 1; j++) {
+    const vertices = [];
+    const idx = [];
+    const uvs = [];
+    const normals = [];
+
+    for (let i = 0; i < gridY1; i++) {
+      const y = i * seg_height - hMid;
+
+      for (let j = 0; j < gridX1; j++) {
         let x = j * seg_width - wMid;
 
         vertices.push(x, -y, 0);
 
-        uvs.push(j / widthSegments);
-        uvs.push(1 - i / heightSegments);
+        // facing towards camera at first
+        normals.push(0, 0, 1);
+
+        uvs.push(j / gridX);
+        uvs.push(1 - i / gridY);
       }
     }
 
-    for (let i = 0; i < heightSegments; i++) {
-      for (let j = 0; j < widthSegments; j++) {
-        let a = i + (widthSegments + 1) * j;
-        let b = i + (widthSegments + 1) * (j + 1);
-        let c = i + 1 + (widthSegments + 1) * (j + 1);
-        let d = i + 1 + (widthSegments + 1) * j;
+    for (let i = 0; i < gridY; i++) {
+      for (let j = 0; j < gridX; j++) {
+        let a = j + gridX1 * i;
+        let b = j + gridX1 * (i + 1);
+        let c = j + 1 + gridX1 * (i + 1);
+        let d = j + 1 + gridX1 * i;
 
         idx.push(a, b, d);
         idx.push(b, c, d);
@@ -53,8 +64,9 @@ class Plane extends Object3D {
 
     this.attributes.push(new Attribute(vertices, 3, 'aPosition'));
     this.attributes.push(new Attribute(uvs, 2, 'uv'));
+    this.attributes.push(new Attribute(normals, 3, 'normal'));
 
-    this.indices = new Uint8Array(idx);
+    this.indices = new Uint16Array(idx);
   }
 }
 

@@ -6,8 +6,7 @@ import defaultFragmentShader from './shaders/default.frag';
 let _scaleMatrix = new Matrix4();
 let _rotMatrix = new Matrix4();
 let _translateMatrix = new Matrix4();
-let _matrix = new Matrix4();
-let _norm = new Matrix4().setScale(1, 1, 1);
+let _v1 = new Vector3();
 
 class Attribute {
   constructor(array, count, name) {
@@ -27,8 +26,14 @@ class Attribute {
 class Uniform {
   constructor(array, count, type) {
     if (Array.isArray(array)) {
+      if (type === 'int') {
+        this.value = new Uint8Array(array);
+      }
       this.value = new Float32Array(array);
     } else if (array === null) {
+      if (type === 'int') {
+        this.value = new Uint8Array(count);
+      }
       this.value = new Float32Array(count);
     } else {
       this.value = array;
@@ -42,11 +47,7 @@ class Uniform {
 }
 
 class Object3D {
-  constructor({
-    position = [0, 0, 0],
-    rotation = [0, 0, 0],
-    scale = [1, 1, 1],
-  }) {
+  constructor(position = [0, 0, 0], rotation = [0, 0, 0], scale = [1, 1, 1]) {
     this.type = 'Object3D';
 
     // transforms
@@ -68,7 +69,7 @@ class Object3D {
     this.matrixWorld = new Matrix4();
     this.renderMatrix = new Matrix4();
     this.up = new Vector3([0, 1, 0]);
-    this.drawMode = 'dynamic';
+    this.drawMode = 'static';
     this.drawType = 'triangles';
     this.visible = false;
     this.transparent = false;
@@ -78,6 +79,7 @@ class Object3D {
     this.uniforms = {
       // default uniforms
       uMouse: new Uniform(null, 2, 'vec2'),
+      uRotation: new Uniform(new Matrix4(), 16, 'mat4'),
       uTime: new Uniform(null, 1, 'float'),
       uResolution: new Uniform(null, 2, 'vec2'),
       viewMatrix: new Uniform(null, 16, 'mat4'),
@@ -147,6 +149,19 @@ class Object3D {
 
   getPosition() {
     return [...this.position.elements];
+  }
+
+  getWorldPosition() {
+    if (this.parent) {
+      var p = this.parent.getWorldPosition();
+    } else {
+      return this.getPosition();
+    }
+
+    _v1.set(p);
+    _v1.add(this.position);
+
+    return [..._v1.elements];
   }
 
   setScale(x, y, z) {
@@ -245,6 +260,8 @@ class Object3D {
     this.rotationMatrix.setRotate(this.rotation.elements[0], 1, 0, 0);
     this.rotationMatrix.rotate(this.rotation.elements[1], 0, 1, 0);
     this.rotationMatrix.rotate(this.rotation.elements[2], 0, 0, 1);
+
+    this.uniforms.uRotation.value = this.rotationMatrix.elements;
   }
 
   calculateTranslationMatrix() {

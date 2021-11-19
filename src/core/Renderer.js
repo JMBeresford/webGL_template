@@ -17,7 +17,7 @@ class Renderer {
 
     this.gl = getWebGLContext(canvas, false, {
       alpha: true,
-      premultipliedAlpha: true,
+      premultipliedAlpha: false,
     });
 
     window.addEventListener('resize', (e) => {
@@ -143,10 +143,8 @@ class Renderer {
     }
 
     for (let attribute of obj.attributes) {
-      let created = false;
       if (attribute.buffer === null) {
         attribute.buffer = this.gl.createBuffer();
-        created = true;
       }
 
       this.gl.bindBuffer(this.gl.ARRAY_BUFFER, attribute.buffer);
@@ -173,6 +171,7 @@ class Renderer {
         0,
         0
       );
+
       this.gl.enableVertexAttribArray(attribPtr);
     }
 
@@ -213,6 +212,15 @@ class Renderer {
           this.gl.uniformMatrix4fv(uniformPtr, false, uniforms[name].value);
           break;
         }
+        case 'int': {
+          if (name === 'uTexture') {
+            this.gl.bindTexture(this.gl.TEXTURE_2D, obj.texture);
+            this.gl.activeTexture(this.gl.TEXTURE0);
+          }
+
+          this.gl.uniform1i(uniformPtr, ...uniforms[name].value);
+          break;
+        }
         default: {
           console.warn(
             `There was an error in the typing of your uniform ${name}`
@@ -222,7 +230,7 @@ class Renderer {
     }
 
     if (obj.indices !== null) {
-      if (!obj.indexBuffer) {
+      if (obj.indexBuffer === null) {
         obj.indexBuffer = this.gl.createBuffer();
       }
 
@@ -236,12 +244,9 @@ class Renderer {
       this.gl.drawElements(
         drawType,
         obj.indices.length,
-        this.gl.UNSIGNED_BYTE,
+        this.gl.UNSIGNED_SHORT,
         0
       );
-    } else {
-      let aPos = obj.attributes.find((a) => a.name === 'aPosition');
-      this.gl.drawArrays(drawType, 0, aPos.value.length / 3);
     }
 
     this.gl.enable(this.gl.DEPTH_TEST);

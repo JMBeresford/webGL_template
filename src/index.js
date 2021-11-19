@@ -9,34 +9,39 @@ import { Pane } from 'tweakpane';
 import { PointerLockControls } from './core/utils/PointerLockControls';
 import basicVertexShader from './core/shaders/basic/basic.vert';
 import basicFragmentShader from './core/shaders/basic/basic.frag';
+import normalVertexShader from './core/shaders/normal/normal.vert';
+import normalFragmentShader from './core/shaders/normal/normal.frag';
+import { Matrix4 } from '../lib/cuon-matrix-cse160';
+import { Sphere } from './core/primitives/Sphere';
 
 // set up renderer
 const canvas = document.querySelector('#webgl');
 const renderer = new Renderer(canvas);
 
 // camera
-const camera = new PerspectiveCamera({ position: [0, 0.5, -3] });
+const camera = new PerspectiveCamera([0, 0.5, 3]);
 
 // scene
-const scene = new Scene({ position: [0, 0, 0] });
+const scene = new Scene();
 
 // default cube ;)
-const cube = new Cube({ position: [0, 0, 0], scale: [1, 1, 1] });
+const cube = new Cube();
+const sphere = new Sphere(1, 20, 20);
 
 // floor
-const floor = new Plane({
-  position: [0, -3, 0],
-  rotation: [90, 0, 0],
-  width: 25,
-  height: 25,
-});
+const floor = new Plane(25, 25);
 
+floor.setPosition(0, -3, 0);
+floor.setRotation(90, 0, 0);
+sphere.vertexShader = normalVertexShader;
+sphere.fragmentShader = normalFragmentShader;
 floor.vertexShader = basicVertexShader;
 floor.fragmentShader = basicFragmentShader;
 
-floor.setColor([0.75, 0.75, 0.9]);
+floor.setColor(0.75, 0.75, 0.9);
 
-scene.add([cube, floor]);
+scene.add([sphere, floor]);
+console.log(sphere);
 
 // DEBUG TOOLS
 const monitor = new Monitor(0);
@@ -107,3 +112,7 @@ const tick = () => {
 };
 
 tick();
+
+let temp = new Matrix4().setLookAt(0, 0, 2, 0, 0, 0, 0, 1, 0);
+
+console.log(temp);
