@@ -5,5 +5,6 @@ uniform vec2 uResolution;
 varying vec3 vNormal;
 
 void main() {
-  gl_FragColor = vec4(vNormal, 1.0);
+  vec3 normal = normalize(vNormal);
+  gl_FragColor = vec4(normal, 1.0);
 }

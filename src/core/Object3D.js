@@ -1,7 +1,7 @@
 import { Vector3, Matrix4 } from '../../lib/cuon-matrix-cse160';
 import { createProgram } from '../../lib/cuon-utils';
-import defaultVertexShader from './shaders/default.vert';
-import defaultFragmentShader from './shaders/default.frag';
+import defaultVertexShader from './shaders/phong/phong.vert';
+import defaultFragmentShader from './shaders/phong/phong.frag';
 
 let _scaleMatrix = new Matrix4();
 let _rotMatrix = new Matrix4();
@@ -27,12 +27,12 @@ class Uniform {
   constructor(array, count, type) {
     if (Array.isArray(array)) {
       if (type === 'int') {
-        this.value = new Uint8Array(array);
+        this.value = new Uint16Array(array);
       }
       this.value = new Float32Array(array);
     } else if (array === null) {
       if (type === 'int') {
-        this.value = new Uint8Array(count);
+        this.value = new Uint16Array(count);
       }
       this.value = new Float32Array(count);
     } else {
@@ -86,6 +86,21 @@ class Object3D {
       projectionMatrix: new Uniform(null, 16, 'mat4'),
       modelMatrix: new Uniform(null, 16, 'mat4'),
       uColor: new Uniform(new Float32Array([1, 1, 1]), 3, 'vec3'),
+      uAmbientIntensity: new Uniform(null, 1, 'float'),
+      uAmbientColor: new Uniform(null, 3, 'vec3'),
+      uPointLightIntensity: new Uniform(null, 1, 'float'),
+      uPointLightColor: new Uniform(null, 3, 'vec3'),
+      uPointLightPos: new Uniform(null, 3, 'vec3'),
+      uSpecularExponent: new Uniform(null, 1, 'float'),
+
+      uSpotLightIntensity: new Uniform(null, 1, 'float'),
+      uSpotLightColor: new Uniform(null, 3, 'vec3'),
+      uSpotLightPos: new Uniform(null, 3, 'vec3'),
+      uSpotSpecularExponent: new Uniform(null, 1, 'float'),
+      uSpotLightTarget: new Uniform(null, 3, 'vec3'),
+      uSpotLightAngle: new Uniform(null, 1, 'float'),
+
+      uCamPos: new Uniform(null, 3, 'vec3'),
     };
 
     this.indices = null; // indices of vertices to draw triangles from, in order
