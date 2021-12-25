@@ -18,6 +18,7 @@ You can now use the below commands as needed
   - These static files can be easily hosted most anywhere that you can host
     webpages
 
+
 This template utilizes webpack to both provide the capabilities of its dev
 server and to allow us to import `.glsl` files directly into our JavaScript
 without resorting to ugly template literals. With a proper code editor you can
