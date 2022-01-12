@@ -9,7 +9,7 @@ You can now use the below commands as needed
 
 #### How to Use
 
-- `npm run serve` will start a development server that hosts the template at
+- `npm run dev` will start a development server that hosts the template at
   `localhost:9000`
   - Editing core files in the template will auto-reload your browser
   - By default, you will be presented with a black canvas with a red point at
